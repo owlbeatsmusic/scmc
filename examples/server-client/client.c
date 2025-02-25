@@ -10,9 +10,10 @@ int main(int argc, char *argv[]) {
     UsrInfo connection;
     scmc_create(&self);
 
+
     connection.pid = atoi(argv[1]);
-    connection.usr_mem_addr = (vm_address_t)strtoul(argv[2], NULL, 16);
-    
+    connection.usr_mem_addr = (LPCVOID)strtoul(argv[2], NULL, 16);
+
     // for client setup
     scmc_connect(&self, &connection);
 
