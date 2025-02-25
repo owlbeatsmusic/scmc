@@ -1,4 +1,4 @@
-#include "scmc.h"
+#include "../../scmc.h"
 
 int main(int argc, char *argv[]) {
 
