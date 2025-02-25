@@ -17,6 +17,7 @@
     #include <WinUser.h>
 #endif // _WIN32
 
+
 /* The data that other processes can access. */
 typedef struct {
     int integer;
@@ -84,24 +85,7 @@ void scmc_read_data(UsrInfo *self, UsrInfo *connection) {
     #ifdef _WIN32
         int read_successful = ReadProcessMemory(connection->handle, connection->usr_mem_addr, (LPVOID)&data, (SIZE_T)size, (SIZE_T *)&size_to_read);
         if (read_successful == 0) {
-            LPVOID lpMsgBuf;
-            DWORD dw = GetLastError(); 
-
-            if (FormatMessage(
-                FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                FORMAT_MESSAGE_FROM_SYSTEM |
-                FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL,
-                dw,
-                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR) &lpMsgBuf,
-                0, NULL) == 0) {
-                ExitProcess(dw);
-            }
-
-
-            LocalFree(lpMsgBuf);
-            ExitProcess(dw); 
+            
         }
     #endif // _WIN32
 }
