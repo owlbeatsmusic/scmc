@@ -8,7 +8,7 @@
 #ifdef __APPLE__
     #include <unistd.h>
     #include <mach/mach.h>
-#endif __APPLE__
+#endif
 
 #ifdef _WIN32
     #include <windows.h>
@@ -38,7 +38,6 @@ typedef struct {
     #ifdef __APPLE__
         pid_t pid;
         mach_port_t task;
-        UsrMem usr_mem;
         vm_address_t usr_mem_addr;
 
         kern_return_t res; // only for client

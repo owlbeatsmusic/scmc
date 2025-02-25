@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 
 
     connection.pid = atoi(argv[1]);
-    connection.usr_mem_addr = (LPCVOID)strtoul(argv[2], NULL, 16);
+    connection.usr_mem_addr = strtoul(argv[2], NULL, 16);
 
     // for client setup
     scmc_connect(&self, &connection);
@@ -20,8 +20,15 @@ int main(int argc, char *argv[]) {
 
     // PROGRAM
     scmc_read_data(&self, &connection);
+    printf("usrmem=(%d, '%c')\n", connection.usr_mem.integer, connection.usr_mem.symbol);
+
+    connection.usr_mem.symbol = '!';
+    connection.usr_mem.integer += 1;
     scmc_write_data(&self, &connection);
+
     scmc_read_data(&self, &connection);
+    printf("usrmem=(%d, '%c')\n", connection.usr_mem.integer, connection.usr_mem.symbol);
+
 
     return 0;
 }

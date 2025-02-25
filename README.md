@@ -7,9 +7,12 @@ It works by connecting processes via Process ID (PID) and then reading each othe
 To use the library just copy and paste the header file into your project (stb-style).
 
 ---
-</br>
 
 ### Example of a simple "server" and "client" </br>
+In this example the client reads and updates the UsrMem struct of the server. Although these files share the same header file, this is not necessary and will still work with two copies of the header file on different places of the system.
+
+</br>
+
 **server.c**:
 ```c
 #define SCMC_IMPLEMENTATION
@@ -20,13 +23,13 @@ int main(int argc, char *argv[]) {
     // SETUP
     UsrInfo self;
     UsrInfo connection;
-    client_create(&self);
+    scmc_create(&self);
 
     self.usr_mem.integer = 123456;
     self.usr_mem.symbol = '#';
 
     // for hosting/server setup
-    host_memory(&self);
+    scmc_print_host(&self);
 
 
     // PROGRAM
@@ -52,19 +55,27 @@ int main(int argc, char *argv[]) {
     // SETUP
     UsrInfo self;
     UsrInfo connection;
-    client_create(&self);
+    scmc_create(&self);
+
 
     connection.pid = atoi(argv[1]);
-    connection.usr_mem_addr = (vm_address_t)strtoul(argv[2], NULL, 16);
-    
+    connection.usr_mem_addr = strtoul(argv[2], NULL, 16);
+
     // for client setup
-    client_connect(&self, &connection);
+    scmc_connect(&self, &connection);
 
 
     // PROGRAM
-    client_read_data(&self, &connection);
-    client_write_data(&self, &connection);
-    client_read_data(&self, &connection);
+    scmc_read_data(&self, &connection);
+    printf("usrmem=(%d, '%c')\n", connection.usr_mem.integer, connection.usr_mem.symbol);
+
+    connection.usr_mem.symbol = '!';
+    connection.usr_mem.integer += 1;
+    scmc_write_data(&self, &connection);
+
+    scmc_read_data(&self, &connection);
+    printf("usrmem=(%d, '%c')\n", connection.usr_mem.integer, connection.usr_mem.symbol);
+
 
     return 0;
 }
