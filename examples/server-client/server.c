@@ -7,13 +7,13 @@ int main(int argc, char *argv[]) {
     // SETUP
     UsrInfo self;
     UsrInfo connection;
-    client_create(&self);
+    scmc_create(&self);
 
     self.usr_mem.integer = 123456;
     self.usr_mem.symbol = '#';
 
     // for hosting/server setup
-    host_memory(&self);
+    scmc_print_host(&self);
 
 
     // PROGRAM

@@ -8,38 +8,37 @@
 #include <mach/mach.h>
 
 
+/* The data that other processes can access. */
 typedef struct {
     int integer;
     char symbol;
 } UsrMem;
 
+/* Information abut a process and UsrMem (+ its address). */
 typedef struct {
     pid_t pid;
     UsrMem usr_mem;
     vm_address_t usr_mem_addr;
 
-    kern_return_t res; // only for self_client
+    kern_return_t res; // only for client
     mach_port_t task;
 } UsrInfo;
 
-/* CLIENT */
-void client_check_result(kern_return_t kern_res, char * msg);
-void client_read_data(UsrInfo *self_client, UsrInfo *connection);
-void client_write_data(UsrInfo *self_client, UsrInfo *connection);
-void client_connect(UsrInfo *self_client, UsrInfo *connection);
-void client_create(UsrInfo *self_client);
+static void scmc_check_result(kern_return_t kern_res, char * msg); /* Check for kernal rescheduling interrupt-errors. */
+void scmc_read_data(UsrInfo *self, UsrInfo *connection);
+void scmc_write_data(UsrInfo *self, UsrInfo *connection);
+void scmc_connect(UsrInfo *self, UsrInfo *connection);
+void scmc_create(UsrInfo *self);
 
-/* HOST */
-void host_memory(UsrInfo *self_client);
+void scmc_print_host(UsrInfo *self);
 
 #endif // SCMC_H_
 
+
 #ifdef SCMC_IMPLEMENTATION
 
-/* CLIENT */
-
 /* function from user: 'aaabbbccc' (https://stackoverflow.com/a/78169925)*/
-void client_check_result(kern_return_t kern_res, char * msg) {
+static void scmc_check_result(kern_return_t kern_res, char * msg) {
     if (kern_res != KERN_SUCCESS) {
             if (msg == NULL)
                     fprintf(stderr, "%s\n", mach_error_string(kern_res));
@@ -49,41 +48,40 @@ void client_check_result(kern_return_t kern_res, char * msg) {
     }
 }
 
-void client_read_data(UsrInfo *self_client, UsrInfo *connection) {
+/* Reads the changes of UsrMem in the memory of the connected process and updates `connection->usr_mem`. */
+void scmc_read_data(UsrInfo *self, UsrInfo *connection) {
     mach_msg_type_number_t size = sizeof(UsrMem);
     vm_size_t size_to_read = (vm_size_t) sizeof(UsrMem);
     void *data;
 
-    self_client->res = vm_read(connection->task, connection->usr_mem_addr, size_to_read, (vm_offset_t *) &data, &size);
-    client_check_result(self_client->res, "error reading virtual memory");
+    self->res = vm_read(connection->task, connection->usr_mem_addr, size_to_read, (vm_offset_t *) &data, &size);
+    scmc_check_result(self->res, "error reading virtual memory");
     memcpy(&connection->usr_mem, (UsrMem *)data, sizeof(UsrMem));
-    fprintf(stdout, "%c\n", connection->usr_mem.symbol);
-    printf("reading...\n");
 }
 
-void client_write_data(UsrInfo *self_client, UsrInfo *connection) {
+/* Writes changes of `connection->usr_mem` to the actual UsrMem of the connected process. */
+void scmc_write_data(UsrInfo *self, UsrInfo *connection) {
     mach_msg_type_number_t size = sizeof(UsrInfo);
-    connection->usr_mem.symbol = '!';
-    self_client->res = vm_write(connection->task, connection->usr_mem_addr, (vm_offset_t) &connection->usr_mem, size);
-    client_check_result(self_client->res, "error writing virtual memory");
+    self->res = vm_write(connection->task, connection->usr_mem_addr, (vm_offset_t) &connection->usr_mem, size);
+    scmc_check_result(self->res, "error writing virtual memory");
 }
 
-void client_connect(UsrInfo *self_client, UsrInfo *connection) {
-    self_client->res = task_for_pid(self_client->task, connection->pid, &connection->task);
-    client_check_result(self_client->res, "error getting task");
+/* Establish the connection between the two processes and set the 'connection->usr_info' (task, PID). */
+void scmc_connect(UsrInfo *self, UsrInfo *connection) {
+    self->res = task_for_pid(self->task, connection->pid, &connection->task);
+    scmc_check_result(self->res, "error getting task");
 }
 
-void client_create(UsrInfo *self_client) {
-    self_client->task = mach_task_self();
-    self_client->pid = getpid();
+/* Set UsrInfo (task, PID) of the process from where this function is called from. */
+void scmc_create(UsrInfo *self) {
+    self->task = mach_task_self();
+    self->pid = getpid();
 }
 
 
-/* HOST */
-
-void host_memory(UsrInfo *self_client) {
-    self_client->pid = getpid();
-    printf("sudo ./client %d %p\n", self_client->pid, &self_client->usr_mem);
+/* Prints the PID and address(of UsrMem) formatted: `"[scmc]: {PID} {ADDRESS}"`.*/
+void scmc_print_host(UsrInfo *self) {
+    printf("[scmc]: %d %p\n", self->pid, &self->usr_mem);
 }
 
 
