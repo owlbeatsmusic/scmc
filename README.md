@@ -3,12 +3,17 @@ A simple library to connect C programs together via memory. Made primarily for l
 
 It works by connecting processes via Process ID (PID) and then reading each others memory.
 
+## Setup
+To use the library just copy and paste the header file into your project (stb-style).
+
 ---
+</br>
 
 ### Example of a simple "server" and "client" </br>
 **server.c**:
 ```c
-#include "scmc.h"
+#define SCMC_IMPLEMENTATION
+#include "../../scmc.h"
 
 int main(int argc, char *argv[]) {
 
@@ -39,7 +44,8 @@ int main(int argc, char *argv[]) {
 ```c
 #include <stdlib.h>
 
-#include "scmc.h"
+#define SCMC_IMPLEMENTATION
+#include "../../scmc.h"
 
 int main(int argc, char *argv[]) {
 

@@ -22,6 +22,19 @@ typedef struct {
     mach_port_t task;
 } UsrInfo;
 
+/* CLIENT */
+void client_check_result(kern_return_t kern_res, char * msg);
+void client_read_data(UsrInfo *self_client, UsrInfo *connection);
+void client_write_data(UsrInfo *self_client, UsrInfo *connection);
+void client_connect(UsrInfo *self_client, UsrInfo *connection);
+void client_create(UsrInfo *self_client);
+
+/* HOST */
+void host_memory(UsrInfo *self_client);
+
+#endif // SCMC_H_
+
+#ifdef SCMC_IMPLEMENTATION
 
 /* CLIENT */
 
@@ -74,6 +87,4 @@ void host_memory(UsrInfo *self_client) {
 }
 
 
-
-
-#endif
+#endif // SCMC_IMPLEMENTATION

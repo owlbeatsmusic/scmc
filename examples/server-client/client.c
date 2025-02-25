@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#define SCMC_IMPLEMENTATION
 #include "../../scmc.h"
 
 int main(int argc, char *argv[]) {
