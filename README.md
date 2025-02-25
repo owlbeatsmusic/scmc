@@ -37,6 +37,10 @@ int main(int argc, char *argv[]) {
 
 **client.c**:
 ```c
+#include <stdlib.h>
+
+#include "scmc.h"
+
 int main(int argc, char *argv[]) {
 
     // SETUP
