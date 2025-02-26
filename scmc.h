@@ -22,6 +22,7 @@
 typedef struct {
     int integer;
     char symbol;
+    char buffer[256];
 } UsrMem;
 
 /* Information abut a process and UsrMem (+ its address). */
@@ -77,6 +78,7 @@ static void scmc_check_result(kern_return_t kern_res, char * msg) {
         int close_handle = CloseHandle(connection->handle);
         if (close_handle == 0) {
             printf("scmc_connect: Error closing handle: %d\n", GetLastError());
+            exit(1);
         }
     }
 #endif // _WIN32
@@ -99,10 +101,12 @@ void scmc_read_data(UsrInfo *self, UsrInfo *connection) {
         connection->handle = OpenProcess(PROCESS_VM_READ, TRUE, connection->pid);    
         if (connection->handle == NULL) {
             printf("scmc_connect: Error getting handle (reading): %d\n", GetLastError());
+            exit(1);
         }
         int read_successful = ReadProcessMemory(connection->handle, connection->usr_mem_addr, (LPVOID)data, (SIZE_T)size, (SIZE_T *)&size_to_read);
         if (read_successful == 0) {
             printf("Error reading virtual memory: %d\n", GetLastError());
+            exit(1);
         }
         scmc_win32_disconnect(connection);
     #endif // _WIN32
@@ -129,21 +133,25 @@ void scmc_write_data(UsrInfo *self, UsrInfo *connection) {
         connection->handle = OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_VM_READ, FALSE, connection->pid);
         if (connection->handle == NULL) {
             printf("scmc_connect: Error getting handle (writing): %d\n", GetLastError());
+            exit(1);
         }
 
         DWORD lpflOldProtect = 0;
         if (VirtualProtectEx(connection->handle, (LPVOID)connection->usr_mem_addr, (SIZE_T)size, PAGE_EXECUTE_READWRITE, &lpflOldProtect) == 0) {
             printf("Error changing protection: %d\n", GetLastError());
+            exit(1);
         }
 
         int write_successful = WriteProcessMemory(connection->handle, (LPVOID)connection->usr_mem_addr, (LPCVOID)&connection->usr_mem, (SIZE_T)size, (SIZE_T *)&size_to_read);
         if (write_successful == 0) {
             printf("Error writing virtual memory: %d\n", GetLastError());
+            exit(1);
         }
 
         // restore old protection
         if (VirtualProtectEx(connection->handle, (LPVOID)connection->usr_mem_addr, (SIZE_T)size, lpflOldProtect, &lpflOldProtect) == 0) {
             printf("Error restoring old protection: %d\n", GetLastError());
+            exit(1);
         }
 
         scmc_win32_disconnect(connection);

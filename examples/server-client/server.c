@@ -1,3 +1,11 @@
+
+/*
+
+    See top of `client.c` in same folder for explanation of
+    example.
+
+*/
+
 #define SCMC_IMPLEMENTATION
 #include "../../scmc.h"
 

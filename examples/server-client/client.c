@@ -1,3 +1,26 @@
+
+/*
+
+    In this example SCMC is used to emulate the usage of a server
+    and client (in a very basic form). This example is also 
+    pretty much the most bare minimum way to use the library in
+    all cases (SCMC works as sender/receiver ≈ client/server).
+
+    This example works by first creating the server by simply 
+    getting and setting the PID (and depending on OS other 
+    information about the process) and then printing the PID and 
+    address of UsrMem.
+    
+    The client takes the servers printed PID and address as 
+    command line arguments then also gets and sets process information. 
+    Then a connection between the two processes is created. Now 
+    everything is set up for reading/writing. In this example the 
+    servers UsrMem is read and then modified by incrementing the first 
+    integer and changing the first char then writing the changes to the
+    servers memory and lastly reading the chnages to verify.
+
+*/
+
 #include <stdlib.h>
 
 #define SCMC_IMPLEMENTATION

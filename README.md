@@ -6,15 +6,34 @@ A simple library to connect C programs together via memory. Made primarily for l
 
 It works by connecting processes via Process ID (PID) and then reading each others memory.
 
-## Setup
-To use the library just copy and paste the header file into your project (stb-style).
+</br>
 
----
-
-### Example of a simple "server" and "client" </br>
-In this example the client reads and updates the UsrMem struct of the server. Although these files share the same header file, this is not necessary and will still work with two copies of the header file on different places of the system.
+### Setup
+To use the library just copy and paste the header file into your project (stb-style). Two processes does not need to share the same scmc.h file to be able to connect. The processes can be on two different locations of the system. 
 
 </br>
+
+### Example of a simple "server" and "client" </br>
+(`/examples/server-client/`) 
+
+In this example SCMC is used to emulate the usage of a server
+and client (in a very basic form). This example is also 
+pretty much the most bare minimum way to use the library in
+all cases (SCMC works as sender/receiver ≈ client/server).
+
+This example works by first creating the server by simply 
+getting and setting the PID (and depending on OS other 
+information about the process) and then printing the PID and 
+address of UsrMem.
+
+The client takes the servers printed PID and address as 
+command line arguments then also gets and sets process information. 
+Then a connection between the two processes is created. Now 
+everything is set up for reading/writing. In this example the 
+servers UsrMem is read and then modified by incrementing the first 
+integer and changing the first char then writing the changes to the
+servers memory and lastly reading the chnages to verify.
+
 
 **server.c**:
 ```c
@@ -67,7 +86,7 @@ int main(int argc, char *argv[]) {
     #ifdef __APPLE__
         connection.usr_mem_addr = (vm_adress_t)strtoul(argv[2], NULL, 16);
     #endif // __APPLE__
-    
+
     // for client setup
     scmc_connect(&self, &connection);
 
