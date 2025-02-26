@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     scmc_create(&self);
 
     self.usr_mem.integer = 123456;
-    self.usr_mem.symbol = '#';
+    self.usr_mem.symbol = 'a';
 
     // for hosting/server setup
     scmc_print_host(&self);
