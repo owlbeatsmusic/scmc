@@ -9,7 +9,12 @@ It works by connecting processes via Process ID (PID) and then reading each othe
 </br>
 
 ### Setup
-To use the library just copy and paste the header file into your project (stb-style). Two processes does not need to share the same scmc.h file to be able to connect. The processes can be on two different locations of the system. 
+To use the library just copy and paste the header file into your project (stb-style). 
+```c
+#define SCMC_IMPLEMENTATION
+#include "scmc.h"
+```
+Two processes does not need to share the same scmc.h file to be able to connect. The processes can be on two different locations of the system. 
 
 </br>
 
