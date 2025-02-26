@@ -1,5 +1,8 @@
 # SCMC
-A simple library to connect C programs together via memory. Made primarily for learning purposes but can still be useful (although it's not the best alternative). Currently it **only works on MacOS** but is planned to expand to multiple platforms. 
+A simple library to connect C programs together via memory. Made primarily for learning purposes but can still be useful (although it's not the best alternative). 
+
+> [!NOTE]
+> Works on **Windows, Macos** (not yet on Linux)
 
 It works by connecting processes via Process ID (PID) and then reading each others memory.
 
@@ -26,7 +29,7 @@ int main(int argc, char *argv[]) {
     scmc_create(&self);
 
     self.usr_mem.integer = 123456;
-    self.usr_mem.symbol = '#';
+    self.usr_mem.symbol = 'a';
 
     // for hosting/server setup
     scmc_print_host(&self);
@@ -57,13 +60,16 @@ int main(int argc, char *argv[]) {
     UsrInfo connection;
     scmc_create(&self);
 
-
     connection.pid = atoi(argv[1]);
-    connection.usr_mem_addr = strtoul(argv[2], NULL, 16);
-
+    #ifdef _WIN32
+        connection.usr_mem_addr = (LPCVOID)(uintptr_t)strtoul(argv[2], NULL, 16);
+    #endif // _WIN32
+    #ifdef __APPLE__
+        connection.usr_mem_addr = (vm_adress_t)strtoul(argv[2], NULL, 16);
+    #endif // __APPLE__
+    
     // for client setup
     scmc_connect(&self, &connection);
-
 
     // PROGRAM
     scmc_read_data(&self, &connection);
@@ -75,7 +81,6 @@ int main(int argc, char *argv[]) {
 
     scmc_read_data(&self, &connection);
     printf("usrmem=(%d, '%c')\n", connection.usr_mem.integer, connection.usr_mem.symbol);
-
 
     return 0;
 }

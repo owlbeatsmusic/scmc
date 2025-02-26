@@ -49,10 +49,10 @@ void scmc_read_data(UsrInfo *self, UsrInfo *connection);
 void scmc_write_data(UsrInfo *self, UsrInfo *connection);
 void scmc_connect(UsrInfo *self, UsrInfo *connection);
 void scmc_create(UsrInfo *self);
-
 void scmc_print_host(UsrInfo *self);
 
 #endif // SCMC_H_
+
 
 
 #ifdef SCMC_IMPLEMENTATION
@@ -70,59 +70,101 @@ static void scmc_check_result(kern_return_t kern_res, char * msg) {
 }
 #endif // __APPLE__
 
+
+#ifdef _WIN32
+    /* Disconnect from other process. */
+    static void scmc_win32_disconnect(UsrInfo *connection) {
+        int close_handle = CloseHandle(connection->handle);
+        if (close_handle == 0) {
+            printf("scmc_connect: Error closing handle: %d\n", GetLastError());
+        }
+    }
+#endif // _WIN32
+
+
 /* Reads the changes of UsrMem in the memory of the connected process and updates `connection->usr_mem`. */
 void scmc_read_data(UsrInfo *self, UsrInfo *connection) {
     unsigned int size = sizeof(UsrMem);
     unsigned int size_to_read = sizeof(UsrMem);
-    void *data;
+    void *data = (void *)malloc(sizeof(UsrMem));
+
 
     #ifdef __APPLE__
         self->res = vm_read(connection->task, connection->usr_mem_addr, (vm_size_t)size_to_read, (vm_offset_t *) &data, (mach_msg_type_number_t *)&size);
         scmc_check_result(self->res, "error reading virtual memory");
     #endif // __APPLE__
 
+
     #ifdef _WIN32
+        connection->handle = OpenProcess(PROCESS_VM_READ, TRUE, connection->pid);    
+        if (connection->handle == NULL) {
+            printf("scmc_connect: Error getting handle (reading): %d\n", GetLastError());
+        }
         int read_successful = ReadProcessMemory(connection->handle, connection->usr_mem_addr, (LPVOID)data, (SIZE_T)size, (SIZE_T *)&size_to_read);
         if (read_successful == 0) {
             printf("Error reading virtual memory: %d\n", GetLastError());
         }
+        scmc_win32_disconnect(connection);
     #endif // _WIN32
 
+
     memcpy(&connection->usr_mem, (UsrMem *)data, sizeof(UsrMem));
+    free(data);
 }
+
 
 /* Writes changes of `connection->usr_mem` to the actual UsrMem of the connected process. */
 void scmc_write_data(UsrInfo *self, UsrInfo *connection) {
     unsigned int size = sizeof(UsrMem);
     unsigned int size_to_read = sizeof(UsrMem);
+
+
     #ifdef __APPLE__
         self->res = vm_write(connection->task, connection->usr_mem_addr, (vm_offset_t) &connection->usr_mem, (mach_msg_type_number_t)size);
         scmc_check_result(self->res, "error writing virtual memory");
     #endif // __APPLE__
 
+
     #ifdef _WIN32
+        connection->handle = OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_VM_READ, FALSE, connection->pid);
+        if (connection->handle == NULL) {
+            printf("scmc_connect: Error getting handle (writing): %d\n", GetLastError());
+        }
+
+        DWORD lpflOldProtect = 0;
+        if (VirtualProtectEx(connection->handle, (LPVOID)connection->usr_mem_addr, (SIZE_T)size, PAGE_EXECUTE_READWRITE, &lpflOldProtect) == 0) {
+            printf("Error changing protection: %d\n", GetLastError());
+        }
+
         int write_successful = WriteProcessMemory(connection->handle, (LPVOID)connection->usr_mem_addr, (LPCVOID)&connection->usr_mem, (SIZE_T)size, (SIZE_T *)&size_to_read);
         if (write_successful == 0) {
-            printf("Error reading virtual memory: %d\n", GetLastError());
-
+            printf("Error writing virtual memory: %d\n", GetLastError());
         }
+
+        // restore old protection
+        if (VirtualProtectEx(connection->handle, (LPVOID)connection->usr_mem_addr, (SIZE_T)size, lpflOldProtect, &lpflOldProtect) == 0) {
+            printf("Error restoring old protection: %d\n", GetLastError());
+        }
+
+        scmc_win32_disconnect(connection);
     #endif // _WIN32
 }
 
+
 /* Establish the connection between the two processes and set the 'connection->usr_info' (PID, ...). */
 void scmc_connect(UsrInfo *self, UsrInfo *connection) {
+
     #ifdef __APPLE__
         self->res = task_for_pid(self->task, connection->pid, &connection->task);
         scmc_check_result(self->res, "error getting task");
     #endif // __APPLE__
 
+
     #ifdef _WIN32
-        connection->handle = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE, TRUE, connection->pid);
-        if (connection->handle == NULL) {
-            printf("scmc_connect: Error reading virtual memory: %d\n", GetLastError());
-        }
+
     #endif // _WIN32
 }
+
 
 /* Set UsrInfo (PID, ...) of the process from where this function is called from. */
 void scmc_create(UsrInfo *self) {
@@ -131,12 +173,9 @@ void scmc_create(UsrInfo *self) {
         self->pid = getpid();
     #endif // __APPLE__
 
+
     #ifdef _WIN32
         self->pid = GetCurrentProcessId();
-        //self->handle = OpenProcess(PROCESS_ALL_ACCESS , TRUE, GetCurrentProcessId());
-        //if (self->handle == NULL) {
-        //    printf("scmc_create: Error reading virtual memory: %d\n", GetLastError());
-        //}
     #endif // _WIN32
 }
 

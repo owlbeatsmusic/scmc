@@ -11,7 +11,12 @@ int main(int argc, char *argv[]) {
     scmc_create(&self);
 
     connection.pid = atoi(argv[1]);
-    connection.usr_mem_addr = (LPCVOID)(uintptr_t)strtoul(argv[2], NULL, 16); // Use uintptr_t for conversion
+    #ifdef _WIN32
+        connection.usr_mem_addr = (LPCVOID)(uintptr_t)strtoul(argv[2], NULL, 16);
+    #endif // _WIN32
+    #ifdef __APPLE__
+        connection.usr_mem_addr = (vm_adress_t)strtoul(argv[2], NULL, 16);
+    #endif // __APPLE__
 
     // for client setup
     scmc_connect(&self, &connection);
@@ -20,15 +25,12 @@ int main(int argc, char *argv[]) {
     scmc_read_data(&self, &connection);
     printf("usrmem=(%d, '%c')\n", connection.usr_mem.integer, connection.usr_mem.symbol);
 
-    printf("2");
     connection.usr_mem.symbol = '!';
     connection.usr_mem.integer += 1;
     scmc_write_data(&self, &connection);
 
     scmc_read_data(&self, &connection);
     printf("usrmem=(%d, '%c')\n", connection.usr_mem.integer, connection.usr_mem.symbol);
-
-    scanf(":");
 
     return 0;
 }

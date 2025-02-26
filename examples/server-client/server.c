@@ -1,4 +1,3 @@
-
 #define SCMC_IMPLEMENTATION
 #include "../../scmc.h"
 
